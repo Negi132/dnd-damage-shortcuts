@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DnD Damage Shortcuts</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; padding: 16px; background: #0b0f17; color: #e9eefc; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .app { max-width: 900px; margin: 0 auto; display: grid; gap: 12px; }
+    .card { background: #121a2a; border: 1px solid #22304a; border-radius: 12px; padding: 12px; }
+
+    label { display: block; font-size: 12px; opacity: 0.9; margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px;
+      border: 1px solid #2a3a59; background: #0f1626; color: #e9eefc;
+    }
+    input::placeholder { color: #9ab; }
+
+    button {
+      border: 1px solid #2a3a59;
+      background: #17233a;
+      color: #e9eefc;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      height: 40px;
+    }
+    button:hover { background: #1a2a48; }
+    button:active { transform: translateY(1px); }
+    .btn-danger { border-color: #5a2a2a; background: #2a1212; }
+    .btn-danger:hover { background: #3a1515; }
+    .btn-ghost { background: transparent; border-color: #2a3a59; }
+    .btn-ghost:hover { background: #121f37; }
+    .btn-small { height: auto; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+
+    .muted { opacity: 0.8; font-size: 12px; }
+    .error { color: #ffb4b4; }
+
+    .pill { font-size: 12px; opacity: 0.85; border: 1px solid #2a3a59; padding: 4px 8px; border-radius: 999px; }
+
+    /* --- Search bar --- */
+    .search-wrap { margin-bottom: 2px; }
+    .search-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+    }
+    #search { height: 40px; }
+
+    /* Hidden by default; shown only when there is search text */
+    #clearSearchBtn { display: none; }
+
+    /* --- Roll mode --- */
+    .mode-bar {
+      display: flex; flex-wrap: wrap;
+      gap: 10px; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .modes {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      padding: 8px; border-radius: 12px;
+      border: 1px solid #22304a; background: #0f1626;
+    }
+    .mode {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 999px;
+      border: 1px solid #2a3a59; cursor: pointer;
+      user-select: none;
+    }
+    .mode:hover { background: #121f37; }
+
+    /* --- Creator layout (inputs aligned, examples only under expression) --- */
+    .creator-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr auto;
+      grid-template-rows: auto auto; /* row 1: inputs, row 2: examples (expr only) */
+      align-items: end;
+    }
+    .creator-name { grid-column: 1; grid-row: 1; }
+    .creator-expr { grid-column: 2; grid-row: 1; }
+    .creator-add  { grid-column: 3; grid-row: 1; }
+    .creator-examples { grid-column: 2; grid-row: 2; }
+
+    /* --- List-like shortcuts --- */
+    .shortcuts-list { display: grid; gap: 10px; margin-top: 12px; }
+
+    .shortcut-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #22304a;
+      background: #0f1626;
+    }
+
+    .shortcut-main { min-width: 0; display: grid; gap: 6px; }
+    .shortcut-name {
+      font-weight: 600; line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .shortcut-expr { display: flex; gap: 8px; align-items: center; min-width: 0; }
+    .expr-pill {
+      font-size: 12px; opacity: 0.9;
+      border: 1px solid #2a3a59; padding: 4px 8px; border-radius: 999px;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .shortcut-actions {
+      display: grid;
+      grid-auto-flow: column;
+      gap: 8px;
+      justify-content: end;
+      align-items: center;
+    }
+
+    /* --- Mobile-friendly roll log --- */
+    .inline-log {
+      margin-top: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #22304a;
+      background: #0b1220;
+    }
+
+    .rolllog-meta {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .rolllog-meta .title {
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .rolllog-meta .kv {
+      font-size: 12px;
+      opacity: 0.9;
+      word-break: break-word;
+    }
+
+    .rolllog-sections {
+      display: grid;
+      gap: 8px;
+    }
+
+    .rolllog-details {
+      border: 1px solid #22304a;
+      background: #0f1626;
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+
+    .rolllog-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+    }
+
+    .rolllog-details summary::-webkit-details-marker { display: none; }
+
+    .rolllog-details .content {
+      margin-top: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .inline-log-total {
+      font-weight: 700;
+      font-size: 1.15em;
+      color: #cfe1ff;
+      margin-top: 10px;
+    }
+
+    /* Make long roll arrays less painful on tiny screens */
+    .rolllog-details .content {
+      overflow-x: auto;
+    }
+
+    .inline-log-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+      gap: 8px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .edit-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+      align-items: end;
+    }
+    .edit-actions {
+      display: grid;
+      grid-auto-flow: column;
+      gap: 8px;
+      justify-content: start;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .creator-grid { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
+      .creator-name { grid-column: 1; grid-row: 1; }
+      .creator-expr  { grid-column: 1; grid-row: 2; }
+      .creator-add   { grid-column: 1; grid-row: 3; }
+      .creator-examples { grid-column: 1; grid-row: 4; }
+      .search-row { grid-template-columns: 1fr; }
+      #search { height: auto; }
+      button { height: auto; }
+    }
+
+    @media (max-width: 520px) {
+      .shortcut-row { grid-template-columns: 1fr; }
+      .shortcut-actions { justify-content: start; }
+      .edit-grid { grid-template-columns: 1fr; }
+    }
+    /* Highlight grand total in roll log */
+    .inline-log-total {
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #cfe1ff;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>DnD Damage Shortcuts</h1>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <div class="search-row">
+        <div>
+          <label for="search">Search shortcuts</label>
+          <input id="search" type="text" placeholder="Search by name or expression (e.g. fire, greatsword, d8)..." />
+        </div>
+        <button id="clearSearchBtn" class="btn-ghost">Clear</button>
+      </div>
+      <div class="muted" style="margin-top:6px;">Filters the list as you type.</div>
+    </div>
+
+    <!-- Creator / Mode -->
+    <div class="card">
+      <div class="mode-bar">
+        <div>
+          <div style="font-weight:600;">Roll mode</div>
+          <div class="muted">Choose how rolls behave for all shortcuts</div>
+        </div>
+        <div class="modes" role="radiogroup" aria-label="Roll mode">
+          <label class="mode">
+            <input type="radio" name="rollMode" value="normal" checked />
+            Normal
+          </label>
+          <label class="mode">
+            <input type="radio" name="rollMode" value="crit" />
+            Crit
+          </label>
+          <label class="mode">
+            <input type="radio" name="rollMode" value="brutal" />
+            Brutal Crit
+          </label>
+        </div>
+      </div>
+
+      <div class="creator-grid">
+        <div class="creator-name">
+          <label for="name">Shortcut name</label>
+          <input id="name" type="text" placeholder="Flaming Greatsword" />
+        </div>
+
+        <div class="creator-expr">
+          <label for="expr">Dice expression</label>
+          <input id="expr" type="text" placeholder="2d6[slashing] + 1d6[fire] + 3" />
+        </div>
+
+        <button id="addBtn" class="creator-add">Add</button>
+
+        <!-- Examples only under the expression column (row 2 col 2) -->
+        <div class="creator-examples muted">
+          Examples:
+          <span class="pill">2d6[slashing]+3</span>
+          <span class="pill">2d6[fire]+1d4[necrotic]+3</span>
+          <span class="pill">d8[cold]+4</span>
+          <span class="pill">3[radiant]</span>
+        </div>
+      </div>
+
+      <div id="formError" class="muted error" style="margin-top:10px; display:none;"></div>
+    </div>
+
+    <!-- Shortcuts -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div>
+          <div style="font-weight:600;">Shortcuts</div>
+          <div class="muted">Saved in your browser (localStorage)</div>
+        </div>
+        <button id="clearAllBtn" class="btn-danger">Clear all</button>
+      </div>
+      <div id="shortcuts" class="shortcuts-list"></div>
+    </div>
+  </div>
+
+<script>
+  // ---------- Storage ----------
+  const STORAGE_KEY = "dnd_damage_shortcuts_v9_search_clear_dismiss_log_aligned";
+
+  function loadShortcuts() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? []; }
+    catch { return []; }
+  }
+  function saveShortcuts(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  // ---------- Parsing ----------
+  function splitType(termText) {
+    const m = termText.match(/^(.*?)(?:\[([a-z0-9 _-]+)\])?$/i);
+    if (!m) return { ok:false, error:`Invalid type syntax in '${termText}'.` };
+    const base = m[1];
+    const typeRaw = m[2] ? m[2].trim() : "";
+    const type = typeRaw ? typeRaw : "untyped";
+    if (typeRaw && typeRaw.length === 0) return { ok:false, error:`Empty damage type in '${termText}'.` };
+    return { ok:true, base, type };
+  }
+
+  function parseExpression(raw) {
+    const s = raw.replace(/\s+/g, "").toLowerCase();
+    if (!s) return { ok: false, error: "Expression is empty." };
+
+    const tokens = [];
+    let i = 0;
+    let sign = +1;
+
+    if (s[i] === "+") { sign = +1; i++; }
+    else if (s[i] === "-") { sign = -1; i++; }
+
+    let current = "";
+    let bracketDepth = 0;
+
+    function pushCurrent() {
+      if (current.length === 0) return false;
+      tokens.push({ sign, text: current });
+      current = "";
+      return true;
+    }
+
+    for (; i < s.length; i++) {
+      const ch = s[i];
+      if (ch === "[") bracketDepth++;
+      if (ch === "]") bracketDepth = Math.max(0, bracketDepth - 1);
+
+      const isOp = (ch === "+" || ch === "-");
+      if (isOp && bracketDepth === 0) {
+        if (!pushCurrent()) return { ok:false, error:"Invalid operator placement (e.g. '2d6++3')." };
+        sign = (ch === "+") ? +1 : -1;
+      } else {
+        current += ch;
+      }
+    }
+    if (!pushCurrent()) return { ok:false, error:"Expression cannot end with an operator." };
+    if (bracketDepth !== 0) return { ok:false, error:"Unclosed [damage type] bracket." };
+
+    const terms = [];
+    for (const t of tokens) {
+      const typeSplit = splitType(t.text);
+      if (!typeSplit.ok) return typeSplit;
+
+      const base = typeSplit.base;
+      const dmgType = typeSplit.type;
+
+      const diceMatch = base.match(/^(\d*)d(\d+)$/);
+      const intMatch = base.match(/^\d+$/);
+
+      if (diceMatch) {
+        const countStr = diceMatch[1];
+        const count = countStr === "" ? 1 : Number(countStr);
+        const sides = Number(diceMatch[2]);
+        if (!Number.isInteger(count) || count <= 0) return { ok:false, error:`Bad dice count in '${t.text}'.` };
+        if (!Number.isInteger(sides) || sides <= 1) return { ok:false, error:`Bad dice sides in '${t.text}'.` };
+        if (count > 200) return { ok:false, error:"Too many dice in one term (max 200)." };
+        terms.push({ kind: "dice", sign: t.sign, count, sides, type: dmgType });
+      } else if (intMatch) {
+        const value = Number(base);
+        terms.push({ kind: "flat", sign: t.sign, value, type: dmgType });
+      } else {
+        return { ok:false, error:`Invalid term '${t.text}'. Use e.g. 2d6[fire], d8[cold], or 3[radiant].` };
+      }
+    }
+
+    const normalized = terms.map((term, idx) => {
+      const prefix = (idx === 0) ? (term.sign === -1 ? "-" : "") : (term.sign === -1 ? "-" : "+");
+      const typePart = term.type && term.type !== "untyped" ? `[${term.type}]` : "";
+      if (term.kind === "dice") return prefix + `${term.count}d${term.sides}${typePart}`;
+      return prefix + `${term.value}${typePart}`;
+    }).join("");
+
+    return { ok: true, terms, normalized };
+  }
+
+  // ---------- Rolling ----------
+  function rollDie(sides) { return 1 + Math.floor(Math.random() * sides); }
+  function rollDice(count, sides) {
+    const rolls = [];
+    for (let i = 0; i < count; i++) rolls.push(rollDie(sides));
+    return rolls;
+  }
+  function addToMap(map, key, delta) { map.set(key, (map.get(key) ?? 0) + delta); }
+
+  function evaluate(parsed, mode) {
+    const breakdown = [];
+    const totalsByType = new Map();
+    let grandTotal = 0;
+
+    for (const term of parsed.terms) {
+      const type = term.type || "untyped";
+
+      if (term.kind === "flat") {
+        const contribution = term.sign * term.value;
+        grandTotal += contribution;
+        addToMap(totalsByType, type, contribution);
+        breakdown.push({
+          label: `${term.sign === -1 ? "-" : "+"}${term.value}${type !== "untyped" ? `[${type}]` : ""}`,
+          details: `flat => ${contribution >= 0 ? "+" : ""}${contribution}`,
+          type
+        });
+        continue;
+      }
+
+      const baseCount = term.count;
+      const count = (mode === "crit") ? baseCount * 2 : baseCount;
+
+      const rolls = rollDice(count, term.sides);
+      const sum = rolls.reduce((a,b)=>a+b,0);
+      const contribution = term.sign * sum;
+
+      grandTotal += contribution;
+      addToMap(totalsByType, type, contribution);
+
+      breakdown.push({
+        label: `${term.sign === -1 ? "-" : "+"}${count}d${term.sides}${type !== "untyped" ? `[${type}]` : ""}`,
+        details: `rolls [${rolls.join(", ")}] sum=${sum} => ${contribution >= 0 ? "+" : ""}${contribution}`,
+        type
+      });
+
+      if (mode === "brutal") {
+        const maxForThisTerm = baseCount * term.sides;
+        const brutalBonus = term.sign * maxForThisTerm;
+
+        grandTotal += brutalBonus;
+        addToMap(totalsByType, type, brutalBonus);
+
+        breakdown.push({
+          label: `Brutal bonus${type !== "untyped" ? `[${type}]` : ""}`,
+          details: `add max (${baseCount}×${term.sides}) => ${brutalBonus >= 0 ? "+" : ""}${brutalBonus}`,
+          type
+        });
+      }
+    }
+
+    return { ok: true, grandTotal, totalsByType, breakdown };
+  }
+
+  function formatTotalsByType(totalsByType) {
+    const entries = Array.from(totalsByType.entries())
+      .filter(([,v]) => v !== 0)
+      .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0]));
+
+    if (entries.length === 0) return "  (none)";
+    return entries.map(([type, value]) => {
+      const label = type === "untyped" ? "untyped" : type;
+      return `  ${label}: ${value}`;
+    }).join("\n");
+  }
+
+  // ---------- UI State ----------
+  const searchEl = document.getElementById("search");
+  const clearSearchBtn = document.getElementById("clearSearchBtn");
+
+  const nameEl = document.getElementById("name");
+  const exprEl = document.getElementById("expr");
+  const addBtn = document.getElementById("addBtn");
+  const clearAllBtn = document.getElementById("clearAllBtn");
+  const shortcutsEl = document.getElementById("shortcuts");
+  const formErrorEl = document.getElementById("formError");
+
+  function getSelectedMode() {
+    const el = document.querySelector('input[name="rollMode"]:checked');
+    return el ? el.value : "normal";
+  }
+
+  let shortcuts = loadShortcuts();
+  let lastRoll = null;     // { id, meta: { now, name, modeLabel, expr, critExpr? }, breakdownText, totalsText, grandTotal }
+  let editingId = null;    // id or null
+  let searchQuery = "";
+
+  function showFormError(msg) {
+    if (!msg) { formErrorEl.style.display="none"; formErrorEl.textContent=""; return; }
+    formErrorEl.style.display="block";
+    formErrorEl.textContent = msg;
+  }
+
+  function setClearButtonVisibility() {
+    // show only when there is text
+    clearSearchBtn.style.display = searchQuery ? "inline-block" : "none";
+  }
+
+  function matchesSearch(item) {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return item.name.toLowerCase().includes(q) || item.expr.toLowerCase().includes(q);
+  }
+
+  function render() {
+    shortcutsEl.innerHTML = "";
+    const visible = shortcuts.filter(matchesSearch);
+
+    if (visible.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "muted";
+      empty.textContent = searchQuery ? "No shortcuts match your search." : "No shortcuts yet — add one above.";
+      shortcutsEl.appendChild(empty);
+      return;
+    }
+
+    for (const item of visible) {
+      const row = document.createElement("div");
+      row.className = "shortcut-row";
+
+      const left = document.createElement("div");
+      left.className = "shortcut-main";
+
+      if (editingId !== item.id) {
+        const nm = document.createElement("div");
+        nm.className = "shortcut-name";
+        nm.textContent = item.name;
+
+        const exprWrap = document.createElement("div");
+        exprWrap.className = "shortcut-expr";
+
+        const expr = document.createElement("div");
+        expr.className = "expr-pill";
+        expr.title = item.expr;
+        expr.textContent = item.expr;
+
+        exprWrap.appendChild(expr);
+        left.appendChild(nm);
+        left.appendChild(exprWrap);
+      } else {
+        const editGrid = document.createElement("div");
+        editGrid.className = "edit-grid";
+
+        const nameBoxWrap = document.createElement("div");
+        const exprBoxWrap = document.createElement("div");
+
+        const nameLbl = document.createElement("label");
+        nameLbl.textContent = "Name";
+        const exprLbl = document.createElement("label");
+        exprLbl.textContent = "Expression";
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.value = item.name;
+        nameInput.id = `edit-name-${item.id}`;
+
+        const exprInput = document.createElement("input");
+        exprInput.type = "text";
+        exprInput.value = item.expr;
+        exprInput.id = `edit-expr-${item.id}`;
+
+        nameBoxWrap.appendChild(nameLbl);
+        nameBoxWrap.appendChild(nameInput);
+        exprBoxWrap.appendChild(exprLbl);
+        exprBoxWrap.appendChild(exprInput);
+
+        editGrid.appendChild(nameBoxWrap);
+        editGrid.appendChild(exprBoxWrap);
+
+        const editActions = document.createElement("div");
+        editActions.className = "edit-actions";
+
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save";
+        saveBtn.onclick = () => saveEdit(item.id);
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.className = "btn-ghost";
+        cancelBtn.onclick = () => { editingId = null; render(); };
+
+        editActions.appendChild(saveBtn);
+        editActions.appendChild(cancelBtn);
+
+        const editError = document.createElement("div");
+        editError.className = "muted error";
+        editError.id = `edit-error-${item.id}`;
+        editError.style.display = "none";
+        editError.style.marginTop = "6px";
+
+        left.appendChild(editGrid);
+        left.appendChild(editActions);
+        left.appendChild(editError);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "shortcut-actions";
+
+      if (editingId !== item.id) {
+        const rollBtn = document.createElement("button");
+        rollBtn.textContent = "Roll";
+        rollBtn.onclick = () => doRoll(item);
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.className = "btn-ghost";
+        editBtn.onclick = () => {
+          editingId = item.id;
+          lastRoll = null;
+          render();
+          setTimeout(() => {
+            const el = document.getElementById(`edit-name-${item.id}`);
+            if (el) el.focus();
+          }, 0);
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn-danger";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => deleteShortcut(item.id);
+
+        actions.appendChild(rollBtn);
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+      } else {
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn-danger";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => deleteShortcut(item.id);
+        actions.appendChild(delBtn);
+      }
+
+      row.appendChild(left);
+      row.appendChild(actions);
+      shortcutsEl.appendChild(row);
+
+      if (lastRoll && lastRoll.id === item.id && editingId !== item.id) {
+        const log = document.createElement("div");
+        log.className = "inline-log";
+
+        const header = document.createElement("div");
+        header.className = "inline-log-header";
+
+        const dismiss = document.createElement("button");
+        dismiss.className = "btn-ghost btn-small";
+        dismiss.textContent = "Dismiss";
+        dismiss.onclick = () => {
+          lastRoll = null;
+          render();
+        };
+
+        header.appendChild(dismiss);
+
+        const meta = document.createElement("div");
+        meta.className = "rolllog-meta";
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = `[${lastRoll.meta.now}] ${lastRoll.meta.name} — ${lastRoll.meta.modeLabel}`;
+
+        const exprLine = document.createElement("div");
+        exprLine.className = "kv";
+        exprLine.textContent = `Expression: ${lastRoll.meta.expr}`;
+
+        meta.appendChild(title);
+        meta.appendChild(exprLine);
+
+        if (lastRoll.meta.critExpr) {
+          const critLine = document.createElement("div");
+          critLine.className = "kv";
+          critLine.textContent = `Crit expression: ${lastRoll.meta.critExpr}`;
+          meta.appendChild(critLine);
+        }
+
+        const sections = document.createElement("div");
+        sections.className = "rolllog-sections";
+
+        const breakdownDetails = document.createElement("details");
+        breakdownDetails.className = "rolllog-details";
+        // collapsed by default (good on phones)
+
+        const breakdownSummary = document.createElement("summary");
+        breakdownSummary.textContent = "Breakdown";
+        const breakdownContent = document.createElement("div");
+        breakdownContent.className = "content";
+        breakdownContent.textContent = lastRoll.breakdownText || "(none)";
+        breakdownDetails.appendChild(breakdownSummary);
+        breakdownDetails.appendChild(breakdownContent);
+
+        const totalsDetails = document.createElement("details");
+        totalsDetails.className = "rolllog-details";
+        totalsDetails.open = true; // totals open by default
+
+        const totalsSummary = document.createElement("summary");
+        totalsSummary.textContent = "Totals by type";
+        const totalsContent = document.createElement("div");
+        totalsContent.className = "content";
+        totalsContent.textContent = lastRoll.totalsText || "(none)";
+        totalsDetails.appendChild(totalsSummary);
+        totalsDetails.appendChild(totalsContent);
+
+        sections.appendChild(breakdownDetails);
+        sections.appendChild(totalsDetails);
+
+        const totalDiv = document.createElement("div");
+        totalDiv.className = "inline-log-total";
+        totalDiv.textContent = "GRAND TOTAL: " + String(lastRoll.grandTotal);
+
+        log.appendChild(header);
+        log.appendChild(meta);
+        log.appendChild(sections);
+        log.appendChild(totalDiv);
+        row.appendChild(log);
+      }
+    }
+  }
+
+  function addShortcut() {
+    showFormError("");
+
+    const name = nameEl.value.trim();
+    const exprRaw = exprEl.value.trim();
+    if (!name) return showFormError("Please give the shortcut a name.");
+
+    const parsed = parseExpression(exprRaw);
+    if (!parsed.ok) return showFormError(parsed.error);
+
+    if (shortcuts.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+      return showFormError("A shortcut with that name already exists.");
+    }
+
+    const item = { id: crypto.randomUUID(), name, expr: parsed.normalized };
+    shortcuts = [item, ...shortcuts];
+    saveShortcuts(shortcuts);
+
+    lastRoll = null;
+    editingId = null;
+
+    render();
+    nameEl.value = "";
+    exprEl.value = "";
+    nameEl.focus();
+  }
+
+  function deleteShortcut(id) {
+    shortcuts = shortcuts.filter(s => s.id !== id);
+    saveShortcuts(shortcuts);
+
+    if (lastRoll && lastRoll.id === id) lastRoll = null;
+    if (editingId === id) editingId = null;
+
+    render();
+  }
+
+  function showEditError(id, msg) {
+    const el = document.getElementById(`edit-error-${id}`);
+    if (!el) return;
+    if (!msg) { el.style.display = "none"; el.textContent = ""; return; }
+    el.style.display = "block";
+    el.textContent = msg;
+  }
+
+  function saveEdit(id) {
+    const nameInput = document.getElementById(`edit-name-${id}`);
+    const exprInput = document.getElementById(`edit-expr-${id}`);
+    if (!nameInput || !exprInput) return;
+
+    const newName = nameInput.value.trim();
+    const newExprRaw = exprInput.value.trim();
+
+    if (!newName) return showEditError(id, "Name cannot be empty.");
+
+    if (shortcuts.some(s => s.id !== id && s.name.toLowerCase() === newName.toLowerCase())) {
+      return showEditError(id, "Another shortcut already has that name.");
+    }
+
+    const parsed = parseExpression(newExprRaw);
+    if (!parsed.ok) return showEditError(id, parsed.error);
+
+    shortcuts = shortcuts.map(s => s.id === id ? { ...s, name: newName, expr: parsed.normalized } : s);
+    saveShortcuts(shortcuts);
+
+    lastRoll = null;
+    editingId = null;
+    render();
+  }
+
+  function doRoll(item) {
+    const mode = getSelectedMode();
+
+    const parsed = parseExpression(item.expr);
+    if (!parsed.ok) {
+      lastRoll = {
+        id: item.id,
+        meta: {
+          now: new Date().toLocaleString(),
+          name: item.name,
+          modeLabel: "ERROR",
+          expr: item.expr,
+          critExpr: ""
+        },
+        breakdownText: `Error: ${parsed.error}`,
+        totalsText: "",
+        grandTotal: "—"
+      };
+      editingId = null;
+      render();
+      return;
+    }
+
+    const result = evaluate(parsed, mode);
+    const now = new Date().toLocaleString();
+    const modeLabel = mode === "normal" ? "NORMAL" : mode === "crit" ? "CRIT" : "BRUTAL CRIT";
+
+    let critExpr = "";
+    if (mode === "crit") {
+      critExpr = parsed.terms.map((t, idx) => {
+        const prefix = (idx === 0) ? (t.sign === -1 ? "-" : "") : (t.sign === -1 ? "-" : "+");
+        const typePart = t.type && t.type !== "untyped" ? `[${t.type}]` : "";
+        if (t.kind === "dice") return prefix + `${t.count * 2}d${t.sides}${typePart}`;
+        return prefix + `${t.value}${typePart}`;
+      }).join("");
+    }
+
+    const breakdownLines = [];
+    for (const b of result.breakdown) breakdownLines.push(`  ${b.label.padEnd(20)} ${b.details}`);
+
+    const breakdownText = breakdownLines.join("\n");
+    const totalsText = formatTotalsByType(result.totalsByType);
+
+    lastRoll = {
+      id: item.id,
+      meta: {
+        now,
+        name: item.name,
+        modeLabel,
+        expr: parsed.normalized,
+        critExpr
+      },
+      breakdownText,
+      totalsText,
+      grandTotal: result.grandTotal
+    };
+
+    editingId = null;
+    render();
+  }
+
+  // ---------- Events ----------
+  addBtn.addEventListener("click", addShortcut);
+
+  clearAllBtn.addEventListener("click", () => {
+  const ok = confirm("Clear ALL shortcuts? This cannot be undone.");
+  if (!ok) return;
+
+  shortcuts = [];
+  saveShortcuts(shortcuts);
+  lastRoll = null;
+  editingId = null;
+  render();
+  });
+
+  [nameEl, exprEl].forEach(el => el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addShortcut();
+  }));
+
+  searchEl.addEventListener("input", () => {
+    searchQuery = searchEl.value.trim();
+    setClearButtonVisibility();
+    editingId = null;
+    render();
+  });
+
+  clearSearchBtn.addEventListener("click", () => {
+    searchEl.value = "";
+    searchQuery = "";
+    setClearButtonVisibility();
+    editingId = null;
+    render();
+    searchEl.focus();
+  });
+
+  // initial
+  setClearButtonVisibility();
+  render();
+</script>
+</body>
+</html>
